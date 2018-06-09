@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Sean Angiolillo on Sean Angiolillo</title>
+    <link>/</link>
+    <description>Recent content in Sean Angiolillo on Sean Angiolillo</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>&amp;copy; 2018</copyright>
+    <lastBuildDate>Sun, 15 Oct 2017 00:00:00 +0530</lastBuildDate>
+    <atom:link href="/" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Mann Ki Baat Text Analysis</title>
+      <link>/project/mann_ki_baat/</link>
+      <pubDate>Thu, 07 Jun 2018 00:00:00 +0530</pubDate>
+      
+      <guid>/project/mann_ki_baat/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Mapping Dosas</title>
+      <link>/post/mapping-dosas/</link>
+      <pubDate>Thu, 31 May 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/post/mapping-dosas/</guid>
+      <description>&lt;script src=&#34;/rmarkdown-libs/htmlwidgets/htmlwidgets.js&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;/rmarkdown-libs/pymjs/pym.v1.js&#34;&gt;&lt;/script&gt;
+&lt;script src=&#34;/rmarkdown-libs/widgetframe-binding/widgetframe.js&#34;&gt;&lt;/script&gt;
+
+
+&lt;div id=&#34;overview&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Overview&lt;/h2&gt;
+&lt;p&gt;From humble origins in Chennai, Saravana Bhavan has grown into a global chain of close to 100 high-quality, vegetarian South Indian restaurants. If you eat at their Delhi location, you’ll find a paper placemat in front of you listing all of their locations around the world. I took the opportunity to scrape their company website for the addresses of these locations and map them.&lt;/p&gt;
+&lt;p&gt;This blog explains how I made a few different visualizations of the chain’s growth, but here is my favorite.&lt;/p&gt;
+&lt;center&gt;
+&lt;div class=&#34;figure&#34;&gt;
+&lt;img src=&#34;/img/hsb_map.gif&#34; /&gt;
+
+&lt;/div&gt;
+&lt;/center&gt;
+&lt;p&gt;I hope this map, along with a few others I’ve made below, are more informative than the map currently available on Saravana’s website.&lt;/p&gt;
+&lt;center&gt;
+&lt;div class=&#34;figure&#34;&gt;
+&lt;img src=&#34;/img/hsb_original.png&#34; alt=&#34;Source: http://www.saravanabhavan.com/restaurants.php&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;Source: &lt;a href=&#34;http://www.saravanabhavan.com/restaurants.php&#34; class=&#34;uri&#34;&gt;http://www.saravanabhavan.com/restaurants.php&lt;/a&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/center&gt;
+&lt;/div&gt;
+&lt;div id=&#34;web-scraping&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Web Scraping&lt;/h2&gt;
+&lt;p&gt;Rather than load all packages at once, I will load them as needed for easier demonstration. I used &lt;code&gt;rvest&lt;/code&gt; for web scraping and the tidyverse for data wrangling.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(tidyverse) 
+library(rvest) 
+library(countrycode)
+library(ggmap)&lt;/code&gt;&lt;/pre&gt;
+&lt;div id=&#34;scrape-country-pages&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;Scrape country pages&lt;/h3&gt;
+&lt;p&gt;The first step was to scrape the data from the Saravana Bhavan &lt;a href=&#34;http://saravanabhavan.com/&#34;&gt;website&lt;/a&gt;. To find the restaurant information, you need to enable Adobe Flash Player to see the map; then choose a country; then a city; and then pick a location. The complete urls contain a country (“cn”), a city (“cy”), and a restaurant id (“rid”). All of these will need to be scraped. An example of this pattern is “&lt;a href=&#34;http://saravanabhavan.com/restaurants.php?cn=U.A.E&amp;amp;cy=Abu%20Dhabi&amp;amp;rid=73&#34;&gt;http://saravanabhavan.com/restaurants.php?cn=U.A.E&amp;amp;cy=Abu%20Dhabi&amp;amp;rid=73&lt;/a&gt;”.&lt;/p&gt;
+&lt;p&gt;In order to do this, I first manually compiled a list of countries, noting their exact spelling and spacing. I then wrote a function to scrape the names of all cities for each country into a dataframe. I also mutated a few columns that will be necessary:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;the names of cities with spaces replaced by “%20” for functioning urls&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;the urls needed in the next step to scrape city pages&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;and a clean version of country names for later plotting&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Next, I loaded in some data from the &lt;code&gt;countrycode&lt;/code&gt; package in order to pair each country with its continent. Later we can map this variable to color for some differentiation in our map.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# start with vector of countries exactly matching website
+countries &amp;lt;- c(&amp;quot;Canada&amp;quot;, &amp;quot;U.S.A&amp;quot;, &amp;quot;SouthAfrica&amp;quot;, &amp;quot;Sweden&amp;quot;, &amp;quot;Netherland&amp;quot;, 
+               &amp;quot;U.K&amp;quot;, &amp;quot;Germany&amp;quot;, &amp;quot;France&amp;quot;, &amp;quot;SaudiArabia&amp;quot;, &amp;quot;Bahrain&amp;quot;, &amp;quot;Qatar&amp;quot;,
+               &amp;quot;U.A.E&amp;quot;, &amp;quot;Kuwait&amp;quot;, &amp;quot;Oman&amp;quot;, &amp;quot;India&amp;quot;, &amp;quot;Thailand&amp;quot;, &amp;quot;HongKong&amp;quot;,
+               &amp;quot;Malaysia&amp;quot;, &amp;quot;Singapore&amp;quot;, &amp;quot;Australia&amp;quot;)
+
+# function to scrape country web pages for city names
+scrape_country &amp;lt;- function(country) {
+    
+    url &amp;lt;- str_c(&amp;quot;http://www.saravanabhavan.com/restaurants.php?cn=&amp;quot;, country)
+    city &amp;lt;- read_html(url) %&amp;gt;% 
+        html_nodes(&amp;quot;.arial-11-gray-bold-black&amp;quot;) %&amp;gt;% 
+        html_text() %&amp;gt;%
+        .[!str_detect(., pattern = &amp;quot;Guest&amp;quot;)]
+
+    tibble(country = country, city = city)
+}
+
+# loop over country web pages to get df of countries and cities, plus complete urls
+hsb &amp;lt;- countries %&amp;gt;%
+    map_dfr(scrape_country) %&amp;gt;%
+    mutate(
+        city_str = str_replace(city, &amp;quot; &amp;quot;, &amp;quot;%20&amp;quot;),
+        city_url = str_c(&amp;quot;http://www.saravanabhavan.com/restaurants.php?cn=&amp;quot;, 
+                         country, &amp;quot;&amp;amp;cy=&amp;quot;, city_str),
+        clean_country = case_when(
+            country == &amp;quot;U.S.A&amp;quot; ~ &amp;quot;United States&amp;quot;,
+            country == &amp;quot;U.K&amp;quot; ~ &amp;quot;United Kingdom&amp;quot;,
+            country == &amp;quot;SaudiArabia&amp;quot; ~ &amp;quot;Saudi Arabia&amp;quot;,
+            country == &amp;quot;HongKong&amp;quot; ~ &amp;quot;Hong Kong SAR China&amp;quot;,
+            country == &amp;quot;Netherland&amp;quot; ~ &amp;quot;Netherlands&amp;quot;,
+            country == &amp;quot;U.A.E&amp;quot; ~ &amp;quot;United Arab Emirates&amp;quot;,
+            country == &amp;quot;SouthAfrica&amp;quot; ~ &amp;quot;South Africa&amp;quot;,
+            TRUE ~ country
+        )
+    )
+
+# get country-continent pair data from countrycode package for joining
+data(&amp;quot;codelist&amp;quot;)
+continents &amp;lt;- codelist %&amp;gt;%
+    select(country.name.en, continent)
+
+# fix country names and join with continents
+hsb1 &amp;lt;- hsb %&amp;gt;%
+    left_join(continents, by = c(&amp;quot;clean_country&amp;quot; = &amp;quot;country.name.en&amp;quot;))
+
+# output file after scraping
+saveRDS(hsb1, file = &amp;quot;hsb1.rds&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We can see the results thus far here.&lt;/p&gt;
+&lt;div id=&#34;htmlwidget-1&#34; style=&#34;width:95%;height:350px;&#34; class=&#34;widgetframe html-widget&#34;&gt;&lt;/div&gt;
+&lt;script type=&#34;application/json&#34; data-for=&#34;htmlwidget-1&#34;&gt;{&#34;x&#34;:{&#34;url&#34;:&#34;/post/2018-05-31-mapping-dosas_files/figure-html//widgets/widget_unnamed-chunk-3.html&#34;,&#34;options&#34;:{&#34;xdomain&#34;:&#34;*&#34;,&#34;allowfullscreen&#34;:false,&#34;lazyload&#34;:false}},&#34;evals&#34;:[],&#34;jsHooks&#34;:[]}&lt;/script&gt;
+&lt;/div&gt;
+&lt;div id=&#34;scrape-city-pages&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;Scrape city pages&lt;/h3&gt;
+&lt;p&gt;After scraping the country pages for city names, we can scrape the city pages for their locations. We can write a very similar function but now target both the name of the location and its corresponding restaurant id (“rid”).&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# function to get locations and restaurant id from city page
+get_location_rid &amp;lt;- function(city_url) {
+    
+    content &amp;lt;- read_html(city_url)
+    
+    location &amp;lt;- content %&amp;gt;%
+        html_nodes(&amp;quot;#branchDiv&amp;quot;) %&amp;gt;% 
+        html_text(trim = TRUE) %&amp;gt;%
+        str_split(&amp;quot;\n&amp;quot;) %&amp;gt;%
+        unlist() %&amp;gt;% 
+        str_trim()
+    
+    rid &amp;lt;- content %&amp;gt;%    
+        html_nodes(&amp;quot;.arial-11-gray-bold-black&amp;quot;) %&amp;gt;%
+        html_attr(&amp;quot;onclick&amp;quot;) %&amp;gt;%
+        str_subset(&amp;quot;rid=&amp;quot;) %&amp;gt;%
+        word(start = -1, sep = &amp;quot;=&amp;quot;) %&amp;gt;%
+        word(start = 1, sep = &amp;quot;&amp;#39;&amp;quot;)
+    
+    tibble(location, rid)
+}
+
+# add locations and rid to each city; mutate complete url for a location
+hsb2 &amp;lt;- hsb1 %&amp;gt;%
+    mutate(location_rid = purrr::map(.$city_url, get_location_rid)) %&amp;gt;%
+    unnest() %&amp;gt;%
+    mutate(rid_url = str_c(city_url, &amp;quot;&amp;amp;rid=&amp;quot;, rid))
+
+# output another file to avoid scraping again
+saveRDS(hsb2, file = &amp;quot;hsb2.rds&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;At this point we can look to see which cities and countries have the most locations. Chennai, where the chain started, is of course the clear leader but cities like London, Singapore and Dubai all have a very high number of locations.&lt;/p&gt;
+&lt;div id=&#34;htmlwidget-2&#34; style=&#34;width:95%;height:350px;&#34; class=&#34;widgetframe html-widget&#34;&gt;&lt;/div&gt;
+&lt;script type=&#34;application/json&#34; data-for=&#34;htmlwidget-2&#34;&gt;{&#34;x&#34;:{&#34;url&#34;:&#34;/post/2018-05-31-mapping-dosas_files/figure-html//widgets/widget_unnamed-chunk-5.html&#34;,&#34;options&#34;:{&#34;xdomain&#34;:&#34;*&#34;,&#34;allowfullscreen&#34;:false,&#34;lazyload&#34;:false}},&#34;evals&#34;:[],&#34;jsHooks&#34;:[]}&lt;/script&gt;
+&lt;/div&gt;
+&lt;div id=&#34;scrape-location-pages-for-addresses-and-launch-dates&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;Scrape location pages for addresses and launch dates&lt;/h3&gt;
+&lt;p&gt;I repeated essentially the same process once more, now focused on extracting addresses and launch dates. For addresses, we have to do a bit of cleanup because we extracted more information than we need, such as phone numbers in most cases. These are not always formatted the same way for each page, but luckily address is always listed first. I have also made a few manual adjustments to addresses that are too brief to find a geolocation match. I also took the step of creating a variable for popup text to be displayed on the leaflet map.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# function to get address information from location page
+get_address &amp;lt;- function(rid_url) {
+    read_html(rid_url) %&amp;gt;%
+        html_nodes(&amp;quot;.arial-10-gray-bold .arial-10-gray-bold&amp;quot;) %&amp;gt;% 
+        html_text(trim = TRUE)
+}
+
+# add addresses for each location to dataframe
+hsb &amp;lt;- hsb %&amp;gt;%
+    mutate(address = purrr::map(.$rid_url, get_address)) %&amp;gt;%
+    unnest() %&amp;gt;%
+    filter(!address == &amp;quot;View Location Map&amp;quot;)
+
+# remove an erroneous duplicate row
+hsb &amp;lt;- hsb[-c(36),]
+
+# clean addresses by splitting on phone number in most cases
+hsb &amp;lt;- hsb %&amp;gt;%
+    separate(address, into = c(&amp;quot;address&amp;quot;, &amp;quot;extra&amp;quot;),
+             sep = &amp;quot;Ph:|Ph :|Ph-|Ph -|PH -|Phone:|Tel:|Tel :|Tel  :|Tel /|Phone :|hsb.{1,}@saravanabhavan.com&amp;quot;, remove = FALSE) %&amp;gt;% 
+    mutate(address = str_remove(address, &amp;quot;\\.$&amp;quot;))
+
+# make a few manual adjustments for failing addresses
+hsb$address[hsb$location == &amp;quot;Vivo City&amp;quot;] &amp;lt;- str_c(
+    hsb$address[hsb$location == &amp;quot;Vivo City&amp;quot;], &amp;quot;, Vivo City, Singapore&amp;quot;)
+hsb$address[hsb$location == &amp;quot;Bur Dubai&amp;quot;] &amp;lt;- str_c(
+    hsb$address[hsb$location == &amp;quot;Bur Dubai&amp;quot;], &amp;quot;, Bur Dubai, Dubai&amp;quot;)
+
+# concatenate location and address in html for leaflet popups
+hsb &amp;lt;- hsb %&amp;gt;%
+    mutate(
+        popup = str_c(
+            &amp;quot;&amp;lt;b style=&amp;#39;color: blue&amp;#39;&amp;gt;&amp;quot;, location, &amp;quot;&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;&amp;quot;,
+            address
+        )
+    )&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We can follow the same process for dates. Only two locations are missing launch dates so that will not be a problem, and one of those restaurants missing a launch date looks to be closed anyway.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# function to get launch date information from location page
+get_date &amp;lt;- function(rid_url) {
+    
+    launch_date &amp;lt;- read_html(rid_url) %&amp;gt;%
+        html_nodes(&amp;quot;.Arial-11-graybold&amp;quot;) %&amp;gt;% 
+        html_text(trim = TRUE) %&amp;gt;%
+        str_split(&amp;quot;: &amp;quot;) %&amp;gt;%
+        unlist %&amp;gt;%
+        .[2]
+    
+    launch_date &amp;lt;- ifelse(is.null(launch_date), NA, launch_date)
+    return(launch_date)
+}
+
+# add addresses for each location to dataframe
+hsb &amp;lt;- hsb %&amp;gt;%
+    mutate(date = purrr::map_chr(.$rid_url, get_date),
+           date = as.Date(date, format = &amp;quot;%d-%m-%Y&amp;quot;)) &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;geocoding-locations&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Geocoding locations&lt;/h2&gt;
+&lt;p&gt;I used the &lt;code&gt;ggmap&lt;/code&gt; package to find longitude and latitude coordinates for each location. Despite being well under a 2,500 query daily limit, I would receive many query limit errors in trying to extract this information, even when adding &lt;code&gt;Sys.sleep()&lt;/code&gt; in between calls.&lt;/p&gt;
+&lt;p&gt;I was able to overcome this problem using a simplified version of a geocoding function from &lt;a href=&#34;https://www.shanelynn.ie/massive-geocoding-with-r-and-google-maps/&#34;&gt;Shane Lynn&lt;/a&gt;. Three locations failed for reasons other than the query limit, and so I just looked them up manually. Be sure to output the object after geocoding completes so to avoid having to do it more than once.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# define function for getting coordinates of an address
+get_geo &amp;lt;- function(address) {
+    
+    geo_reply &amp;lt;- geocode(address, output = &amp;#39;all&amp;#39;, 
+                         messaging = TRUE, override_limit = TRUE)
+    
+    answer &amp;lt;- tibble(address = address, lat = NA, lon = NA, status = NA)
+    answer$status &amp;lt;- geo_reply$status
+    
+    while (geo_reply$status == &amp;quot;OVER_QUERY_LIMIT&amp;quot;) {
+        print(&amp;quot;OVER QUERY LIMIT - Pausing for 1 minute at:&amp;quot;) 
+        time &amp;lt;- Sys.time()
+        print(as.character(time))
+        Sys.sleep(60)
+        geo_reply &amp;lt;- geocode(address, output = &amp;#39;all&amp;#39;, messaging = TRUE, override_limit = TRUE)
+        answer$status &amp;lt;- geo_reply$status
+    }
+    
+    if (geo_reply$status != &amp;quot;OK&amp;quot;) {
+        return(answer)
+    }  else {
+        answer$lat &amp;lt;- geo_reply$results[[1]]$geometry$location$lat
+        answer$lon &amp;lt;- geo_reply$results[[1]]$geometry$location$lng
+        return(answer)
+    }
+    
+}
+
+# get coordinates for each location&amp;#39;s address in a new df after removing known failures
+address_crs &amp;lt;- hsb %&amp;gt;%
+    filter(!location %in% c(&amp;quot;Southall&amp;quot;, &amp;quot;Tooting&amp;quot;, &amp;quot;Al Khuwair&amp;quot;)) %&amp;gt;%
+    .$address %&amp;gt;%
+    map_dfr(get_geo)
+
+# save to rds to avoid re-running geocode
+saveRDS(address_crs, file = &amp;quot;address_crs.RDS&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Lastly, we just need to join the coordinate data back into our main dataset.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;address_crs &amp;lt;- readRDS(&amp;quot;address_crs.RDS&amp;quot;)
+
+# join coordinate data back into main df with 3 manual additions
+final_hsb &amp;lt;- hsb %&amp;gt;%
+    left_join(address_crs, by = &amp;quot;address&amp;quot;) %&amp;gt;%
+    mutate(
+        lat = case_when(
+            location == &amp;quot;Southall&amp;quot; ~ 51.5074321,
+            location == &amp;quot;Tooting&amp;quot; ~ 51.4299496,
+            location == &amp;quot;Al Khuwair&amp;quot; ~ 23.5968027,
+            TRUE ~ lat
+        ),
+        lon = case_when(
+            location == &amp;quot;Southall&amp;quot; ~ -0.3800047,
+            location == &amp;quot;Tooting&amp;quot; ~ -0.1683871,
+            location == &amp;quot;Al Khuwair&amp;quot; ~ 58.4314325,
+            TRUE ~ lon
+        )
+    )
+
+# save final df
+saveRDS(final_hsb, &amp;quot;final_hsb.RDS&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;plot-locations-on-a-leaflet-map&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Plot locations on a Leaflet map&lt;/h2&gt;
+&lt;p&gt;Once we have our final dataset we can plot the coordinates on a map. Leaflet is one tool we can use to do this easily. The map below has its pros and cons. It is very easy to interact with as we can zoom in to each cluster and get a better sense of the regional distribution. If we zoom in far enough, we can see exactly where each restaurant is.&lt;/p&gt;
+&lt;p&gt;However, we are probably less interested in each restaurant’s exact location. We could just use Google Maps if we were planning a visit. Instead a better choice might be animating a map that would allow for less interaction but would be able to show the growth of the franchise over time.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(leaflet)
+suppressPackageStartupMessages(library(widgetframe))
+
+final_hsb &amp;lt;- readRDS(&amp;quot;../../static/data/final_hsb.RDS&amp;quot;)
+
+factpal &amp;lt;- colorFactor(palette = &amp;quot;Set3&amp;quot;, domain = factor(final_hsb$continent))
+
+hsb_leaflet &amp;lt;- leaflet(data = final_hsb) %&amp;gt;%
+    addProviderTiles(providers$OpenStreetMap) %&amp;gt;%
+    addMarkers(lng = ~lon, lat = ~lat,
+               label = ~str_c(city, &amp;quot;, &amp;quot;, clean_country),
+               popup = ~popup,
+               clusterOptions = markerClusterOptions()) %&amp;gt;%
+    addCircleMarkers(lng = ~lon, lat = ~lat,
+                     color = ~factpal(continent)) %&amp;gt;%
+    setView(0, 0, 1)
+
+frameWidget(hsb_leaflet, height = &amp;#39;400&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;div id=&#34;htmlwidget-3&#34; style=&#34;width:100%;height:400px;&#34; class=&#34;widgetframe html-widget&#34;&gt;&lt;/div&gt;
+&lt;script type=&#34;application/json&#34; data-for=&#34;htmlwidget-3&#34;&gt;{&#34;x&#34;:{&#34;url&#34;:&#34;/post/2018-05-31-mapping-dosas_files/figure-html//widgets/widget_unnamed-chunk-10.html&#34;,&#34;options&#34;:{&#34;xdomain&#34;:&#34;*&#34;,&#34;allowfullscreen&#34;:false,&#34;lazyload&#34;:false}},&#34;evals&#34;:[],&#34;jsHooks&#34;:[]}&lt;/script&gt;
+&lt;/div&gt;
+&lt;div id=&#34;plot-locations-over-time-with-gganimate&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Plot locations over time with gganimate&lt;/h2&gt;
+&lt;p&gt;We will be able to tell a better story about the growth of the franchise if we utilize of the launch date variable. Moreover, instead of using exact locations, we can aggregate all locations in one city as a single entity. While we could repeat our geocoding process for city names, it makes more sense to use the coordinates of one of the locations previously found as the coordinates for all locations in that given city. On a world map, we will not be able to notice any intra-city differences anyway.&lt;/p&gt;
+&lt;p&gt;Launch dates were missing for only two restaurants, one of which appears now to be closed, so there is no problem there for our purposes.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;city_coordinates &amp;lt;- final_hsb %&amp;gt;%
+    select(city, lat, lon) %&amp;gt;%
+    group_by(city) %&amp;gt;%
+    top_n(1)
+    
+# join coordinate data into df with dates of each location; mutate city totals, labels
+hsb_dates &amp;lt;- final_hsb %&amp;gt;%
+    filter(!is.na(date)) %&amp;gt;%
+    select(city, clean_country, continent, date) %&amp;gt;%
+    mutate(city_country = str_c(city, &amp;quot;, &amp;quot;, clean_country)) %&amp;gt;%
+    left_join(city_coordinates, by = &amp;quot;city&amp;quot;) %&amp;gt;%
+    group_by(city_country, date, lat, lon, continent) %&amp;gt;%
+    count() %&amp;gt;%
+    arrange(date) %&amp;gt;%
+    group_by(city_country, continent) %&amp;gt;%
+    mutate(city_total = cumsum(n)) %&amp;gt;%
+    ungroup() %&amp;gt;%
+    mutate(
+        hsb_total = cumsum(n),
+        label = str_c(city_country, &amp;quot; (&amp;quot;, city_total, &amp;quot;)&amp;quot;)
+    )&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After the following transformations we can view the growth of the franchise in a table format. The first two decades of existence for the brand is almost exclusively in Chennai and South India.&lt;/p&gt;
+&lt;div id=&#34;htmlwidget-4&#34; style=&#34;width:95%;height:350px;&#34; class=&#34;widgetframe html-widget&#34;&gt;&lt;/div&gt;
+&lt;script type=&#34;application/json&#34; data-for=&#34;htmlwidget-4&#34;&gt;{&#34;x&#34;:{&#34;url&#34;:&#34;/post/2018-05-31-mapping-dosas_files/figure-html//widgets/widget_unnamed-chunk-12.html&#34;,&#34;options&#34;:{&#34;xdomain&#34;:&#34;*&#34;,&#34;allowfullscreen&#34;:false,&#34;lazyload&#34;:false}},&#34;evals&#34;:[],&#34;jsHooks&#34;:[]}&lt;/script&gt;
+&lt;p&gt;Before animating, we can plot the final map with all locations.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(maps)
+library(ggthemes)
+
+world &amp;lt;- ggplot() +
+    borders(&amp;quot;world&amp;quot;, colour = &amp;quot;gray85&amp;quot;, fill = &amp;quot;gray80&amp;quot;) +
+    theme_map()
+
+world +
+    geom_point(data = hsb_dates, 
+               mapping = aes(x = lon, y = lat, size = city_total, color = continent), 
+               alpha = 0.5) +
+    scale_color_discrete(guide = FALSE) +
+    labs(size = &amp;quot;No. Restaurants&amp;quot;, 
+         title = &amp;quot;Saravana Bhavan Restaurants Around the World&amp;quot;) +
+    theme(plot.title = element_text(size = 12))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/post/2018-05-31-mapping-dosas_files/figure-html/unnamed-chunk-13-1.png&#34; width=&#34;70%&#34; style=&#34;display: block; margin: auto;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;The map above however fails to show the growth of the chain over time. That is something we can achieve with a simple animation. With a little guidance from a blog post by &lt;a href=&#34;https://d4tagirl.com/2017/05/how-to-plot-animated-maps-with-gganimate&#34;&gt;Daniela Vázquez&lt;/a&gt;, it was fairly easy to make an animated map.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(animation)
+library(gganimate)
+
+# add empty rows for 0 count at beginning and pause at finish
+hsb_dates &amp;lt;- hsb_dates %&amp;gt;%
+    add_row(date = as.Date(&amp;quot;1981-01-01&amp;quot;), hsb_total = 0) %&amp;gt;%
+    add_row(date = as.Date(&amp;quot;2018-05-01&amp;quot;), hsb_total = 94) %&amp;gt;%
+    arrange(date)
+
+hsb_map &amp;lt;- world +
+    geom_point(data = hsb_dates, mapping = aes(x = lon, y = lat, 
+                      size = city_total, color = continent,
+                      frame = date, cumulative = TRUE), 
+               alpha = 0.5) +
+    theme(legend.position = &amp;quot;none&amp;quot;) +
+    labs(size = &amp;quot;No. Restaurants&amp;quot;, 
+         title = &amp;quot;Growth of Saravana Bhavan Restaurants:&amp;quot;) +
+    ggrepel::geom_label_repel(
+        data = hsb_dates,
+        mapping = aes(x = lon, y = lat, label = label,
+                      frame = date, cumulative = FALSE)
+        ) +
+    geom_label(data = hsb_dates,
+               mapping = aes(label = str_c(&amp;quot;World Total: &amp;quot;, hsb_total), frame = date,
+                             x = -Inf, y = -88),
+               size = 4, fontface = &amp;quot;bold&amp;quot;, hjust = 0, vjust = 1, nudge_y = 10) +
+    theme(plot.title = element_text(size = 16))
+
+ani.options(ani.width = 640, ani.height = 480, interval = 0.8)
+gganimate(hsb_map, filename = &amp;quot;hsb_map.gif&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;center&gt;
+&lt;div class=&#34;figure&#34;&gt;
+&lt;img src=&#34;/img/hsb_map.gif&#34; /&gt;
+
+&lt;/div&gt;
+&lt;/center&gt;
+&lt;/div&gt;
+&lt;div id=&#34;plot-growth-over-time&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Plot growth over time&lt;/h2&gt;
+&lt;p&gt;The animated map is excellent at showing the geographical distribution of the chain’s growth. If instead we were more interested in the timeline of the growth, we could better represent the pace of the growth in a lineplot (shown below).&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;date_seq &amp;lt;- seq(from = as.Date(&amp;quot;1980/1/1&amp;quot;), to = as.Date(&amp;quot;2020/1/1&amp;quot;), by = &amp;quot;5 years&amp;quot;)
+
+ggplot(hsb_dates, aes(x = date, y = hsb_total)) +
+    geom_point(size = 0.5) +
+    geom_line() +
+    scale_x_date(NULL, breaks = date_seq, date_labels = &amp;quot;%Y&amp;quot;) +
+    labs(title = &amp;quot;Establishment of Saravana Bhavan Restaurants&amp;quot;,
+         y = &amp;quot;No. of Locations&amp;quot;) +
+    theme(plot.title = element_text(size = 12))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/post/2018-05-31-mapping-dosas_files/figure-html/unnamed-chunk-15-1.png&#34; width=&#34;70%&#34; style=&#34;display: block; margin: auto;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;We could then animate the line, adding the location name for each point.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;hsb_time &amp;lt;- ggplot(hsb_dates, aes(x = date, y = hsb_total, frame = date)) +
+    geom_point(size = 0.5) +
+    geom_line(aes(cumulative = TRUE)) +
+    ggrepel::geom_label_repel(aes(label = label), 
+                              nudge_x = -5, nudge_y = 1, direction = &amp;quot;both&amp;quot;) +
+    scale_x_date(NULL, breaks = date_seq, date_labels = &amp;quot;%Y&amp;quot;) +
+    labs(title = &amp;quot;Establishment of Saravana Bhavan Restaurants:&amp;quot;,
+         y = &amp;quot;No. of Locations&amp;quot;) +
+    theme(plot.title = element_text(size = 12))
+
+ani.options(ani.width = 640, ani.height = 480, interval = 0.8)
+gganimate(hsb_time, filename = &amp;quot;hsb_time.gif&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;center&gt;
+&lt;div class=&#34;figure&#34;&gt;
+&lt;img src=&#34;/img/hsb_time.gif&#34; /&gt;
+
+&lt;/div&gt;
+&lt;/center&gt;
+&lt;/div&gt;
+&lt;div id=&#34;conclusion&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+&lt;p&gt;I hope these examples helped demonstrate the power of packages like &lt;code&gt;rvest&lt;/code&gt; for webscraping, &lt;code&gt;leaflet&lt;/code&gt; for html maps, and &lt;code&gt;gganimate&lt;/code&gt; for animated plots. One possible improvement would be using &lt;code&gt;tweenr&lt;/code&gt; to interpolate data between dates in order to smoothen out the transitions from point to point. The most interesting thing I noted about the chain’s growth is the absolute paucity of branches in India, outside of Chennai. Eight locations in London but not a single one in Mumbai, Bangalore, Kolkata, Pune, Ahmedabad, etc? That seems quite odd.&lt;/p&gt;
+&lt;/div&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>PA 2016 Campaign Finance</title>
+      <link>/project/pa2016/</link>
+      <pubDate>Fri, 18 May 2018 00:00:00 +0530</pubDate>
+      
+      <guid>/project/pa2016/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Example Talk</title>
+      <link>/talk/example-talk/</link>
+      <pubDate>Sun, 01 Jan 2017 00:00:00 +0530</pubDate>
+      
+      <guid>/talk/example-talk/</guid>
+      <description>&lt;p&gt;Embed your slides or video here using &lt;a href=&#34;https://sourcethemes.com/academic/post/writing-markdown-latex/&#34; target=&#34;_blank&#34;&gt;shortcodes&lt;/a&gt;. Further details can easily be added using &lt;em&gt;Markdown&lt;/em&gt; and $\rm \LaTeX$ math code.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>A Person Re-Identification System For Mobile Devices</title>
+      <link>/publication/person-re-identification/</link>
+      <pubDate>Tue, 01 Sep 2015 00:00:00 +0530</pubDate>
+      
+      <guid>/publication/person-re-identification/</guid>
+      <description>&lt;p&gt;More detail can easily be written here using &lt;em&gt;Markdown&lt;/em&gt; and $\rm \LaTeX$ math code.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Mobile visual clothing search</title>
+      <link>/publication/clothing-search/</link>
+      <pubDate>Mon, 01 Jul 2013 00:00:00 +0530</pubDate>
+      
+      <guid>/publication/clothing-search/</guid>
+      <description>&lt;p&gt;More detail can easily be written here using &lt;em&gt;Markdown&lt;/em&gt; and $\rm \LaTeX$ math code.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

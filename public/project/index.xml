@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Projects on Sean Angiolillo</title>
+    <link>/project/</link>
+    <description>Recent content in Projects on Sean Angiolillo</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>&amp;copy; 2018</copyright>
+    <lastBuildDate>Thu, 07 Jun 2018 00:00:00 +0530</lastBuildDate>
+    
+	<atom:link href="/project/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Mann Ki Baat Text Analysis</title>
+      <link>/project/mann_ki_baat/</link>
+      <pubDate>Thu, 07 Jun 2018 00:00:00 +0530</pubDate>
+      
+      <guid>/project/mann_ki_baat/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>PA 2016 Campaign Finance</title>
+      <link>/project/pa2016/</link>
+      <pubDate>Fri, 18 May 2018 00:00:00 +0530</pubDate>
+      
+      <guid>/project/pa2016/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>
