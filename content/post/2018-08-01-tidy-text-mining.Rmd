@@ -1,0 +1,15 @@
+---
+title: Tidy Text Mining
+author: Sean Angiolillo
+date: '2018-08-01'
+slug: tidy-text-mining
+categories:
+  - R
+tags:
+  - tidytext
+header:
+  caption: ''
+  image: ''
+---
+
+After giving a short talk introducing the `tidytext` package at an [R Users Delhi](https://twitter.com/rusersdelhi) Meetup, I wrote a blog covering the points of the talk. You can find it on the Social Cops blog [here](https://blog.socialcops.com/technology/data-science/introduction-tidytext-mining/).
