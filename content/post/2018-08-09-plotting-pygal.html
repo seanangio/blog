@@ -26,3 +26,5 @@ Your browser does not support SVG
 Your browser does not support SVG
 </object>
 <p>My scripts for producing these plots can be found in my <a href="https://github.com/seanangio/rice_isp">GitHub repo</a>.</p>
+<p>While these scripts recreated the required visualizations, they should not be considered publication-ready. In the map for instance, the legend categorizes the differences between countries having GDP data and those missing, but there is no explanation of what the shades of red represent. The “Missing from World Bank Data” label is also cut-off. Moreover, the tooltips give GDP values with too many decimal points but no sense of units. It also does not utilize space well. The legend could likely fit in the bottom left corner closer to South America, and there could be less space between the title and the map itself.</p>
+<p>The line plot also suffers from poor formatting of numeric values in the tooltip and y-axis. Placing the legend on the right hand side (<code>ggplot2</code>’s default) would also make better use of space.</p>
