@@ -9,7 +9,7 @@ title = "Mann Ki Baat Text Analysis"
 summary = "Tidy text analysis of India PM's radio addresses in a Shiny app"
 
 # Optional image to display on homepage (relative to `static/img/` folder).
-image_preview = "mkb_cloud.png"
+image_preview = "mkb.gif"
 
 # Tags: can be used for filtering projects.
 # Example: `tags = ["machine-learning", "deep-learning"]`

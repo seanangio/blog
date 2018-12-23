@@ -9,11 +9,11 @@ title = "Next Word Prediction"
 summary = "Next word prediction app in support of JHU Data Science Capstone on Coursera"
 
 # Optional image to display on homepage (relative to `static/img/` folder).
-image_preview = "next_word.png"
+image_preview = "next-word.gif"
 
 # Tags: can be used for filtering projects.
 # Example: `tags = ["eda", "maps"]`
-tags = ["shiny", "text"]
+tags = ["shiny", "text", "quanteda", "data.table"]
 
 # Optional external URL for project (replaces project detail page).
 external_link = "https://seanangio.shinyapps.io/next_word_app/"

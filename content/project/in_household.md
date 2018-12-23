@@ -9,7 +9,8 @@ title = "Access to Electricity, Latrines and Water in India"
 summary = "Explore electricity, latrine and water access data from the Indian Census"
 
 # Optional image to display on homepage (relative to `static/img/` folder).
-image_preview = "app_screen2.png"
+image_preview = "electricity.gif" 
+#"app_screen2.png"
 
 # Tags: can be used for filtering projects.
 # Example: `tags = ["eda", "maps"]`
