@@ -1,23 +1,22 @@
 +++
 # Date this page was created.
-date = 2018-12-14T00:00:00
+date = 2019-01-28T00:00:00
 
 # Project title.
-title = "Access to Electricity, Latrines and Water in India"
+title = "Spatial Subsetting in R"
 
 # Project summary to display on homepage.
-summary = "Explore electricity, latrine and water access data from the Indian Census"
+summary = "Learn different topological relations to spatially subset data via the sf package"
 
 # Optional image to display on homepage (relative to `static/img/` folder).
-image_preview = "electricity.gif" 
-#"app_screen2.png"
+image_preview = "spatial_subset_home.png"
 
 # Tags: can be used for filtering projects.
 # Example: `tags = ["eda", "maps"]`
-tags = ["shiny", "maps", "sf", "leaflet"]
+tags = ["shiny", "leaflet", "sf", "ggplot2"]
 
 # Optional external URL for project (replaces project detail page).
-external_link = "https://shiny.socialcops.com/gisvector/"
+external_link = "https://shiny.socialcops.com/spatialsubset/"
 
 # Does the project detail page use math formatting?
 math = false

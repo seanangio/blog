@@ -16,7 +16,7 @@ image_preview = "viz_india.gif"
 tags = ["shiny", "ggiraph", "sf", "cartogram"]
 
 # Optional external URL for project (replaces project detail page).
-external_link = "https://seanangio.shinyapps.io/viz_india/"
+external_link = "https://shiny.socialcops.com/indiastates/"
 
 # Does the project detail page use math formatting?
 math = false
