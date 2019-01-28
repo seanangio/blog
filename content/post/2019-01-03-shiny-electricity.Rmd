@@ -1,0 +1,15 @@
+---
+title: Using Shiny to Explore Electricity, Latrine & Water Access in India
+author: Sean Angiolillo
+date: '2019-01-03'
+slug: shiny-electricity
+categories:
+  - R
+tags:
+  - shiny, leaflet, sf
+header:
+  caption: ''
+  image: ''
+---
+
+After giving a talk introducing geospatial data visualization with the `sf`, `leaflet` and `shiny` packages at an [R Users Delhi](https://twitter.com/rusersdelhi) Meetup, I wrote a blog covering the points of the talk. Video and slides are also available. You can find it on the Social Cops blog [here](https://blog.socialcops.com/technology/data-science/shiny-electricity-latrine-water-india/).
